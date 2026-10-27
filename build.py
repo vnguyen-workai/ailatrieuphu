@@ -4,6 +4,7 @@
 Mỗi câu hỏi: {"t": chủ đề, "d": 1|2|3, "q": câu hỏi, "a": [đáp án đúng, sai, sai, sai]}
 Chạy: python3 build.py
 """
+import hashlib
 import json
 import re
 import sys
@@ -20,6 +21,16 @@ BANNED = re.compile(r"tất cả|cả hai|\bcả a\b|không có đáp án|đều
 def norm(s):
     s = unicodedata.normalize("NFC", s).lower()
     return re.sub(r"[^\w]+", " ", s).strip()
+
+
+def stamp_versions():
+    """Gắn ?v=<mã băm nội dung> vào link CSS/JS trong index.html để trình duyệt không dùng bản cũ trong bộ nhớ đệm."""
+    page = ROOT / "index.html"
+    html = page.read_text(encoding="utf-8")
+    for name in ("style.css", "game.js", "questions.js"):
+        digest = hashlib.sha1((ROOT / name).read_bytes()).hexdigest()[:8]
+        html = re.sub(rf'"{re.escape(name)}(\?v=[^"]*)?"', f'"{name}?v={digest}"', html)
+    page.write_text(html, encoding="utf-8")
 
 
 def main():
@@ -62,6 +73,7 @@ def main():
         encoding="utf-8",
     )
 
+    stamp_versions()
     print(f"Đã ghi {len(bank)} câu hỏi vào {OUT.name}")
     for t, n in sorted(Counter(q["t"] for q in bank).items()):
         by_d = Counter(q["d"] for q in bank if q["t"] == t)

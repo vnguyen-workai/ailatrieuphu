@@ -23,7 +23,7 @@ Câu hỏi nằm trong `questions/*.json`, mỗi câu có dạng:
 - `a[0]` luôn là đáp án đúng; thứ tự được xáo trộn khi chơi.
 - `d`: 1 = dễ (câu 1–5), 2 = trung bình (câu 6–10), 3 = khó (câu 11–15).
 
-Sau khi sửa, chạy lại để tạo `questions.js`, kiểm tra trùng lặp và lỗi định dạng:
+Sau khi sửa câu hỏi hoặc bất kỳ file CSS/JS nào, chạy lệnh dưới đây trước khi đẩy lên GitHub. Lệnh này tạo `questions.js`, kiểm tra trùng lặp và lỗi định dạng, và cập nhật mã phiên bản trong `index.html` để người chơi không bị dùng bản cũ trong bộ nhớ đệm:
 
 ```bash
 python3 build.py
