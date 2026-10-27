@@ -96,8 +96,6 @@
   const $ = (id) => document.getElementById(id);
   const screens = { start: $("screen-start"), game: $("screen-game"), end: $("screen-end") };
   const el = {
-    topicList: $("topic-list"),
-    bankInfo: $("bank-info"),
     btnStart: $("btn-start"),
     qNumber: $("q-number"),
     qPrize: $("q-prize"),
@@ -105,10 +103,6 @@
     qBox: document.querySelector(".question-box"),
     qText: $("q-text"),
     answers: $("answers"),
-    confirmBar: $("confirm-bar"),
-    confirmText: $("confirm-text"),
-    btnConfirm: $("btn-confirm"),
-    btnCancel: $("btn-cancel"),
     btnWalk: $("btn-walk"),
     ladder: $("ladder"),
     ladderList: $("ladder-list"),
@@ -163,54 +157,11 @@
     window.scrollTo(0, 0);
   }
 
-  // ---------- Màn hình bắt đầu ----------
-  function renderTopics() {
-    const saved = store.get("tttp-topics", Object.keys(TOPICS));
-    el.topicList.innerHTML = "";
-    Object.entries(TOPICS).forEach(([key, label]) => {
-      const count = BANK.filter((q) => q.t === key).length;
-      const chip = document.createElement("label");
-      chip.className = "topic-chip";
-      const input = document.createElement("input");
-      input.type = "checkbox";
-      input.value = key;
-      input.checked = saved.includes(key) && count > 0;
-      input.disabled = count === 0;
-      input.addEventListener("change", updateBankInfo);
-      const text = document.createElement("span");
-      text.textContent = label;
-      const small = document.createElement("small");
-      small.textContent = count + " câu hỏi";
-      text.appendChild(small);
-      chip.append(input, text);
-      el.topicList.appendChild(chip);
-    });
-    updateBankInfo();
-  }
-
-  function selectedTopics() {
-    return [...el.topicList.querySelectorAll("input:checked")].map((i) => i.value);
-  }
-
-  function updateBankInfo() {
-    const topics = selectedTopics();
-    const pool = BANK.filter((q) => topics.includes(q.t));
-    const byD = [1, 2, 3].map((d) => pool.filter((q) => q.d === d).length);
-    const ok = byD.every((n) => n >= 5);
-    el.btnStart.disabled = !ok;
-    el.bankInfo.textContent = BANK.length === 0
-      ? "Chưa có câu hỏi nào. Hãy chạy build.py để tạo questions.js."
-      : ok
-        ? `${pool.length} câu hỏi · Dễ ${byD[0]} · Trung bình ${byD[1]} · Khó ${byD[2]}`
-        : "Hãy chọn thêm chủ đề để có đủ câu hỏi.";
-    store.set("tttp-topics", topics);
-  }
-
-  // ---------- Chọn câu hỏi ----------
+  // ---------- Chọn câu hỏi (ngẫu nhiên từ mọi chủ đề) ----------
   function nextQuestion(level) {
     const d = difficultyFor(level);
     const seen = new Set(store.get("tttp-seen", []));
-    const base = BANK.filter((q) => state.topics.includes(q.t) && q.d === d && !state.used.has(q.id));
+    const base = BANK.filter((q) => q.d === d && !state.used.has(q.id));
     const lastTopic = state.current ? state.current.t : null;
 
     // Ưu tiên: chưa gặp gần đây + khác chủ đề câu trước → nới dần điều kiện
@@ -237,7 +188,6 @@
     sound.ensure();
     sound.start();
     state = {
-      topics: selectedTopics(),
       level: 0,
       used: new Set(),
       current: null,
@@ -286,11 +236,10 @@
       const text = document.createElement("span");
       text.textContent = opt.text;
       btn.append(letter, text);
-      btn.addEventListener("click", () => selectAnswer(i));
+      btn.addEventListener("click", () => chooseAnswer(i));
       el.answers.appendChild(btn);
     });
 
-    el.confirmBar.hidden = true;
     el.btnWalk.disabled = false;
     updateLifelineButtons();
     renderLadder();
@@ -357,34 +306,20 @@
     renderTimer();
   }
 
-  // ---------- Trả lời ----------
-  function selectAnswer(i) {
-    if (!state || state.locked || state.removed.has(i)) return;
-    sound.select();
-    state.selected = i;
-    answerButtons().forEach((b, j) => b.classList.toggle("selected", j === i));
-    el.confirmText.textContent = `Đáp án ${LETTERS[i]} là câu trả lời cuối cùng?`;
-    el.confirmBar.hidden = false;
-  }
-
-  function cancelSelection() {
-    if (!state || state.locked) return;
-    state.selected = null;
-    answerButtons().forEach((b) => b.classList.remove("selected"));
-    el.confirmBar.hidden = true;
-  }
-
-  function confirmAnswer() {
-    if (!state || state.locked || state.selected == null) return;
+  // ---------- Trả lời (bấm là chốt ngay) ----------
+  function chooseAnswer(chosen) {
+    if (!state || state.locked || state.removed.has(chosen) || !el.modal.hidden) return;
     state.locked = true;
+    state.selected = chosen;
     stopTimer();
-    el.confirmBar.hidden = true;
     el.btnWalk.disabled = true;
     updateLifelineButtons();
-    answerButtons().forEach((b) => (b.disabled = true));
+    answerButtons().forEach((b, j) => {
+      b.disabled = true;
+      b.classList.toggle("selected", j === chosen);
+    });
     sound.lock();
 
-    const chosen = state.selected;
     setTimeout(() => {
       const correctIdx = state.options.findIndex((o) => o.correct);
       const buttons = answerButtons();
@@ -412,7 +347,6 @@
 
   function timeUp() {
     state.locked = true;
-    el.confirmBar.hidden = true;
     updateLifelineButtons();
     const buttons = answerButtons();
     buttons.forEach((b) => { b.disabled = true; b.classList.remove("selected"); });
@@ -488,7 +422,6 @@
       buttons[i].classList.add("hidden-opt");
       buttons[i].disabled = true;
     });
-    if (toRemove.includes(state.selected)) cancelSelection();
     updateLifelineButtons();
   }
 
@@ -618,9 +551,7 @@
   // ---------- Sự kiện ----------
   el.btnStart.addEventListener("click", startGame);
   el.btnAgain.addEventListener("click", startGame);
-  el.btnHome.addEventListener("click", () => { renderTopics(); showScreen("start"); });
-  el.btnConfirm.addEventListener("click", confirmAnswer);
-  el.btnCancel.addEventListener("click", cancelSelection);
+  el.btnHome.addEventListener("click", () => showScreen("start"));
   el.btnWalk.addEventListener("click", askWalkAway);
   el.ll5050.addEventListener("click", useFifty);
   el.llAudience.addEventListener("click", useAudience);
@@ -639,14 +570,10 @@
     if (e.key === "Escape") { closeModal(); el.ladder.classList.remove("open"); return; }
     if (!el.modal.hidden) return;
     const idx = LETTERS.indexOf(e.key.toUpperCase());
-    if (idx >= 0) selectAnswer(idx);
-    else if (e.key === "Enter" && state && state.selected != null) {
-      e.preventDefault();
-      confirmAnswer();
-    }
+    if (idx >= 0) chooseAnswer(idx);
   });
 
+  el.btnStart.disabled = BANK.length === 0;
   renderSoundBtn();
-  renderTopics();
   renderLadder();
 })();

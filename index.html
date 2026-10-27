@@ -22,12 +22,6 @@
       <h1>Thử Thách <span>Triệu Phú</span></h1>
       <p class="tagline">15 câu hỏi · 3 quyền trợ giúp · 500 triệu đồng</p>
 
-      <div class="topics">
-        <h2>Chọn chủ đề</h2>
-        <div id="topic-list" class="topic-list"></div>
-        <p id="bank-info" class="bank-info"></p>
-      </div>
-
       <button id="btn-start" class="btn btn-primary btn-big">Bắt đầu chơi</button>
 
       <details class="rules">
@@ -38,7 +32,8 @@
           <li>Các mốc <b>câu 5</b> và <b>câu 10</b> là mốc an toàn: trả lời sai sau mốc này bạn vẫn giữ tiền thưởng của mốc.</li>
           <li>Bạn có thể dừng cuộc chơi bất kỳ lúc nào và mang về số tiền đã đạt được.</li>
           <li>3 quyền trợ giúp, mỗi quyền dùng một lần: <b>50:50</b>, <b>Hỏi khán giả</b>, <b>Gọi người thân</b>.</li>
-          <li>Phím tắt: A/B/C/D để chọn, Enter để chốt đáp án.</li>
+          <li>Câu hỏi được chọn ngẫu nhiên từ tất cả các chủ đề.</li>
+          <li>Bấm vào đáp án (hoặc phím A/B/C/D) là chốt ngay, không thể chọn lại.</li>
         </ul>
       </details>
     </div>
@@ -84,14 +79,6 @@
           <p id="q-text"></p>
         </div>
         <div class="answers" id="answers"></div>
-
-        <div class="confirm-bar" id="confirm-bar" hidden>
-          <span id="confirm-text">Đây là câu trả lời cuối cùng?</span>
-          <div>
-            <button class="btn btn-ghost" id="btn-cancel">Chọn lại</button>
-            <button class="btn btn-primary" id="btn-confirm">Chốt đáp án</button>
-          </div>
-        </div>
 
         <div class="bottom-actions">
           <button class="btn btn-ghost" id="btn-walk">Dừng cuộc chơi</button>
